@@ -9,7 +9,7 @@
    =================================================================== */
 "use strict";
 
-var CACHE_VERSION = "questpsle-v1";          // bump to invalidate old caches
+var CACHE_VERSION = "questpsle-v3";          // bump to invalidate old caches
 var SHELL_CACHE   = CACHE_VERSION + "-shell";
 var DATA_CACHE    = CACHE_VERSION + "-data";
 
@@ -55,10 +55,11 @@ function isVersion(url)   { return /\/version\.json(\?.*)?$/.test(url); }
 
 self.addEventListener("fetch", function (event) {
   var req = event.request;
-  if (req.method !== "GET") return;                 // never cache POSTs (AI calls)
   var url = req.url;
 
-  // 1) Anthropic API → network-first, never cached.
+  // 0) Anthropic API → always go straight to the network, untouched.
+  //    Checked FIRST (before the GET-only guard) so the AI POST is never
+  //    intercepted, redirected, or cached by this worker.
   if (isAnthropic(url)) {
     event.respondWith(fetch(req).catch(function () {
       return new Response(JSON.stringify({ error: { message: "Offline: AI unavailable" } }),
@@ -66,6 +67,8 @@ self.addEventListener("fetch", function (event) {
     }));
     return;
   }
+
+  if (req.method !== "GET") return;                 // never cache other POSTs
 
   // 2) version.json → network-first (so content updates are detected),
   //    falling back to cache when offline.
