@@ -9,7 +9,7 @@
    =================================================================== */
 "use strict";
 
-var CACHE_VERSION = "questpsle-v3";          // bump to invalidate old caches
+var CACHE_VERSION = "questpsle-v4";          // bump to invalidate old caches
 var SHELL_CACHE   = CACHE_VERSION + "-shell";
 var DATA_CACHE    = CACHE_VERSION + "-data";
 
@@ -18,6 +18,7 @@ var DATA_CACHE    = CACHE_VERSION + "-data";
 var SHELL_ASSETS = [
   "./",
   "./index.html",
+  "./science-reviewer.html",
   "./manifest.webmanifest",
   "./version.json",
   "./data/english.json",
