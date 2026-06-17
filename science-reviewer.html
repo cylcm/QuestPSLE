@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSLE Science Reviewer</title>
+<style>
+/* ===== Quest PSLE Science Reviewer =====
+   Self-contained, offline, zero dependencies.
+   Scoped under #pa-scirev so it can be injected into Quest PSLE
+   without colliding with host styles. */
+#pa-scirev{
+  --bg:#fbfaf7; --card:#ffffff; --ink:#1f2733;
+  --soft:#5b6573; --line:#e7e3da; --line2:#efece5;
+  --accent:#2f6f8f; --flag:#b8902a; --flagbg:#fdf6e3;
+  --radius:14px; --maxw:880px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color:var(--ink); line-height:1.5; box-sizing:border-box;
+}
+#pa-scirev *,#pa-scirev *::before,#pa-scirev *::after{box-sizing:border-box;}
+#pa-scirev .wrap{max-width:var(--maxw); margin:0 auto; padding:18px 16px 60px;}
+
+/* header */
+#pa-scirev .hd{margin-bottom:6px;}
+#pa-scirev .hd h1{font-size:1.55rem; font-weight:800; letter-spacing:-.02em; margin:0 0 4px;}
+#pa-scirev .hd p{margin:0; color:var(--soft); font-size:.92rem;}
+#pa-scirev .meta{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:.78rem; color:var(--soft);}
+#pa-scirev .meta b{color:var(--ink); font-weight:700;}
+
+/* mind map */
+#pa-scirev .mm{margin:20px 0 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--card); overflow:hidden;}
+#pa-scirev .mm-hd{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 16px; cursor:pointer; user-select:none;}
+#pa-scirev .mm-hd h2{font-size:.95rem; font-weight:700; margin:0; display:flex; align-items:center; gap:8px;}
+#pa-scirev .mm-hd .hint{font-size:.74rem; color:var(--soft); font-weight:500;}
+#pa-scirev .chev{transition:transform .25s ease; color:var(--soft);}
+#pa-scirev .mm.open .mm-hd .chev{transform:rotate(90deg);}
+#pa-scirev .mm-body{display:none; padding:4px 10px 16px;}
+#pa-scirev .mm.open .mm-body{display:block;}
+#pa-scirev svg.tree{width:100%; height:auto; display:block; font-family:inherit;}
+#pa-scirev .tnode{cursor:pointer;}
+#pa-scirev .tnode rect{transition:fill .15s ease, stroke .15s ease;}
+#pa-scirev .tnode text{font-size:13px; font-weight:600; pointer-events:none;}
+#pa-scirev .tleaf text{font-size:11.5px; font-weight:500;}
+#pa-scirev .tnode:hover rect{filter:brightness(.96);}
+#pa-scirev .tedge{fill:none; stroke:var(--line); stroke-width:1.6;}
+#pa-scirev .branch{display:none;}
+#pa-scirev .branch.show{display:block;}
+
+/* theme tabs */
+#pa-scirev .tabs{display:flex; gap:8px; flex-wrap:wrap; margin:22px 0 4px; position:sticky; top:0; background:var(--bg); padding:8px 0; z-index:5;}
+#pa-scirev .tab{border:1px solid var(--line); background:var(--card); color:var(--soft);
+  padding:7px 13px; border-radius:999px; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .15s;}
+#pa-scirev .tab[aria-selected="true"]{color:#fff; border-color:transparent;}
+#pa-scirev .tab:hover{color:var(--ink);}
+
+/* theme section */
+#pa-scirev .theme{display:none; margin-top:18px;}
+#pa-scirev .theme.active{display:block;}
+#pa-scirev .theme-intro{display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border-radius:var(--radius);
+  border:1px solid var(--line); margin-bottom:14px;}
+#pa-scirev .theme-intro .dot{width:11px; height:11px; border-radius:50%; margin-top:5px; flex:none;}
+#pa-scirev .theme-intro h3{margin:0 0 2px; font-size:1.05rem; font-weight:800;}
+#pa-scirev .theme-intro p{margin:0; color:var(--soft); font-size:.88rem;}
+
+/* topic accordion card */
+#pa-scirev .topic{border:1px solid var(--line); border-radius:var(--radius); background:var(--card); margin-bottom:10px; overflow:hidden; scroll-margin-top:64px;}
+#pa-scirev .topic-hd{display:flex; align-items:center; gap:10px; padding:13px 15px; cursor:pointer; user-select:none;}
+#pa-scirev .topic-hd .ttl{font-weight:700; font-size:.96rem; flex:1; min-width:0;}
+#pa-scirev .badge{font-size:.66rem; font-weight:700; letter-spacing:.02em; padding:3px 7px; border-radius:6px;
+  background:var(--line2); color:var(--soft); white-space:nowrap;}
+#pa-scirev .qcount{font-size:.72rem; color:var(--soft); white-space:nowrap;}
+#pa-scirev .topic-body{display:none; border-top:1px solid var(--line2); padding:4px 0 6px;}
+#pa-scirev .topic.open .topic-body{display:block;}
+#pa-scirev .topic.open .topic-hd .chev{transform:rotate(90deg);}
+#pa-scirev .topic.flash{animation:flash 1.4s ease;}
+@keyframes flash{0%{background:#fffae8;}100%{background:var(--card);}}
+
+/* Q&A rows */
+#pa-scirev .qa{border-top:1px solid var(--line2);}
+#pa-scirev .qa:first-child{border-top:none;}
+#pa-scirev .qrow{display:flex; gap:10px; align-items:flex-start; padding:11px 15px 11px 15px; cursor:pointer;}
+#pa-scirev .qrow:hover{background:#faf9f5;}
+#pa-scirev .qmark{font-size:.7rem; font-weight:800; color:var(--accent); background:#eaf2f5; border-radius:6px;
+  padding:2px 6px; flex:none; margin-top:1px; min-width:26px; text-align:center;}
+#pa-scirev .qtext{font-weight:600; font-size:.9rem; flex:1;}
+#pa-scirev .qtog{color:var(--soft); flex:none; transition:transform .2s; margin-top:2px;}
+#pa-scirev .qa.open .qtog{transform:rotate(90deg);}
+#pa-scirev .arow{display:none; padding:0 15px 13px 51px; font-size:.89rem; color:#36404e;}
+#pa-scirev .qa.open .arow{display:block;}
+#pa-scirev .arow ul{margin:4px 0 0; padding-left:18px;}
+#pa-scirev .arow li{margin:2px 0;}
+
+/* source note */
+#pa-scirev .srcnote{display:flex; gap:9px; align-items:flex-start; margin:6px 15px 12px; padding:10px 12px;
+  background:var(--flagbg); border:1px solid #ecdcae; border-left:3px solid var(--flag); border-radius:8px;
+  font-size:.8rem; color:#6b5613;}
+#pa-scirev .srcnote .ic{flex:none; margin-top:1px;}
+#pa-scirev .srcnote b{color:#5a4710;}
+
+/* controls within a theme */
+#pa-scirev .tctl{display:flex; gap:8px; justify-content:flex-end; margin-bottom:8px;}
+#pa-scirev .tctl button{background:none; border:1px solid var(--line); color:var(--soft); font-size:.76rem;
+  font-weight:600; padding:5px 10px; border-radius:8px; cursor:pointer;}
+#pa-scirev .tctl button:hover{color:var(--ink); border-color:var(--soft);}
+
+@media (max-width:520px){
+  #pa-scirev .hd h1{font-size:1.3rem;}
+  #pa-scirev .qrow{padding-left:12px;}
+  #pa-scirev .arow{padding-left:12px;}
+}
+@media (prefers-reduced-motion:reduce){
+  #pa-scirev *{animation:none!important; transition:none!important;}
+}
+</style>
+</head>
+<body style="margin:0;background:#fbfaf7;">
+<!-- ===== INJECT START: this whole block is what getScienceReviewerHTML() returns ===== -->
+<div id="pa-scirev">
+  <div class="wrap">
+    <div class="hd">
+      <h1>PSLE Science Reviewer</h1>
+      <p>Question &amp; answer revision companion, organised by the five PSLE science themes. Primary 3 to 6.</p>
+      <div class="meta">
+        <span><b id="pa-sr-stat-themes">5</b> themes</span>
+        <span><b id="pa-sr-stat-topics">27</b> topics</span>
+        <span><b id="pa-sr-stat-q">245</b> questions</span>
+      </div>
+    </div>
+
+    <!-- Mind map -->
+    <div class="mm open" id="pa-sr-mm">
+      <div class="mm-hd" data-mm-toggle>
+        <h2>
+          <svg class="chev" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l5 4-5 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Concept map
+        </h2>
+        <span class="hint">Tap a theme to expand &middot; tap a topic to open it</span>
+      </div>
+      <div class="mm-body" id="pa-sr-mmbody"><!-- svg injected by JS --></div>
+    </div>
+
+    <!-- Theme tabs -->
+    <div class="tabs" id="pa-sr-tabs" role="tablist"></div>
+
+    <!-- Theme sections -->
+    <div id="pa-sr-sections"></div>
+  </div>
+</div>
+<!-- ===== INJECT END ===== -->
+
+<script>
+/* ===== Quest PSLE Science Reviewer — runtime =====
+   All state namespaced under pa_scirev_* per project storage convention. */
+(function(){
+  "use strict";
+  var DATA = /*__DATA__*/{"themes":[{"name":"Diversity","blurb":"There is a great variety of living and non-living things in the world.","hue":"#2f8f6b","topics":[{"id":"diversity-living-and-non-living-things","title":"Living and non-living things","primary":"Primary 3","qa":[{"q":"What are the characteristics of living things?","a":"Need air, water and food to stay alive. Grow Respond to changes around them Die Move by themselves Reproduce"},{"q":"What are the 4 main groups of living things?","a":"Plants, animals, fungi and bacteria."},{"q":"Explain why a mouse is a living thing, while a computer mouse is a non-living thing.","a":"A mouse is a living thing as it can die / grow / respond to changes / move by themselves / reproduce, while a computer mouse is a non-living thing as it cannot die."},{"q":"Explain why a car is not a living thing, even though a car can move.","a":"Even though a car can move, it is not a living thing as it is not moving by itself / cannot die / cannot grow / cannot respond to changes / cannot reproduce."}],"source_note":null},{"id":"diversity-animals","title":"Animals","primary":"Primary 3","qa":[{"q":"What are the characteristics of birds?","a":"Birds have outer covering of feathers Birds have a beak Birds have a pair of wings. Birds reproduce by laying eggs."},{"q":"Name some birds that do not fly?","a":"Penguin, ostrich, kiwi and emu."},{"q":"What are the characteristics of fish?","a":"Fish have outer covering of scales. Fish have fins. Fish have gills to breathe in water. Fish reproduce by laying eggs."},{"q":"Name some examples of fish.","a":"Shark, puffer fish, eel, lion fish"},{"q":"What are the characteristics of amphibians?","a":"Amphibians have outer covering of moist skin. Amphibians live on land and in water. Amphibians breathe with moist skin when in water, breathe with lungs when on land Amphibians reproduce by laying eggs."},{"q":"Name some examples of amphibians.","a":"Frog, salamander, and toad."},{"q":"What are the characteristics of insects?","a":"Insects have outer covering of exoskeleton. Insects have 6 legs. Insects have 2 feelers. Insects have 3 body parts. Insects reproduce by laying eggs."},{"q":"Name some examples of insects.","a":"Ant, bee, grasshopper and ladybird."},{"q":"What are the characteristics of mammals?","a":"Mammals have outer covering of hair. Mammals give off milk to feed their young. Mammals reproduce by giving birth."},{"q":"Name some examples of mammals that live in water.","a":"Whale, dolphin, manatee"},{"q":"Name an example of mammal that can fly.","a":"bat"},{"q":"What are the characteristics of reptile?","a":"Reptiles have outer covering of dry scales Reptiles reproduce by laying eggs."},{"q":"Name some examples of reptiles","a":"Turtle, crocodile, lizard and snake."},{"q":"What is the difference between a bat and a penguin in terms of their outer coverings?","a":"A bat has outer covering of hair, while penguin has outer covering of feathers."},{"q":"What is the difference between a bat and a penguin in terms of how they reproduce?","a":"A bat gives birth, while a penguin lay eggs."},{"q":"What is similarity between a bee and a penguin in terms of how they reproduce?","a":"Both bee and penguin lay eggs"}],"source_note":null},{"id":"diversity-plants","title":"Plants","primary":"Primary 3","qa":[{"q":"What are plants?","a":"Plants are living things that can make their own food."},{"q":"What are the parts of the plants?","a":"Plants have, leaf, stem and roots."},{"q":"What are the types of leaves edge?","a":"Entire edge, jagged edge"},{"q":"What are the types of stem?","a":"Weak stem and strong stem"},{"q":"What are flowering plants?","a":"Flowering plants are plants that have flowers."},{"q":"What are non-flowering plants","a":"Non-flowering plants are plants that do not have flowers."},{"q":"State examples of flowering plants?","a":"Sunflower, ixora, hibiscus, water lily"},{"q":"State examples of non-flowering plants?","a":"Bird nest fern, rabbit’s foot fern, ladder fern"}],"source_note":null},{"id":"diversity-fungi-and-bacteria","title":"Fungi and Bacteria","primary":"Primary 3","qa":[{"q":"What are the characteristics of fungi?","a":"feed on living things, dead or alive reproduce by spores."},{"q":"What are the examples of fungi?","a":"mushroom, bracket fungus and bread mould"},{"q":"What does fungi needs to survive?","a":"Fungi need moisture, air, food and warmth to survive."},{"q":"What are the characteristics of bacteria?","a":"feed on living things, dead or alive reproduce by cell division"},{"q":"What are the examples of bacteria?","a":"paramecium, lactobacillus"}],"source_note":null},{"id":"diversity-exploring-materials","title":"Exploring materials","primary":"Primary 3","qa":[{"q":"What are the types of materials?","a":"Wood, rubber, cotton, leather, wool, silk, copper, iron, gold, clay, sand, ceramics, glass, nylon, plastics etc"},{"q":"What are the properties of wood?","a":"Wood can be hard or soft. Wood can be heavy or light"},{"q":"What are the properties of rubber?","a":"Rubber is soft, light and flexible."},{"q":"What are the properties of cotton?","a":"Cotton is soft, light and flexible."},{"q":"What are the properties of leather?","a":"Leather is soft, strong and flexible."},{"q":"What are the properties of wool?","a":"Wool is soft and flexible."},{"q":"What are the properties of silk?","a":"Silk is soft and flexible."},{"q":"What are the properties of copper, iron and gold?","a":"They are hard, strong, heavy and stiff."},{"q":"What are the properties of clay?","a":"Clay is soft, strong and stiff"},{"q":"What are the properties of ceramics?","a":"Ceramic is hard, stiff and breaks easily."},{"q":"What are the properties of glass?","a":"Glass is hard, stiff and breaks easily."},{"q":"What are the properties of nylon?","a":"Nylon is soft, strong and light and flexible."},{"q":"State the meaning of strength and describe how to test strength.","a":"Strength is the ability to withstand heavy weight without breaking or tearing. Strength can be tested by breaking or tearing the material The material is strong if it does not break easily. The material is weak if it breaks easily."},{"q":"State the meaning of flexibility and describe how to test flexibility.","a":"Flexibility is the ability to bend without breaking. Flexibility can be tested by bending or stretching the material. The material is flexible if it bends or stretches without breaking. The material is flexible if it bends or stretches without breaking. The material is stiff if it break through bending or breaking."},{"q":"State the meaning of waterproof and describe how to test waterproof.","a":"Waterproof is the ability to withstand physical changes when encountering water. The material is waterproof"},{"q":"State the meaning of transparency and describe how to test transparency. List examples of such materials.","a":"Transparency is the amount of light allowed to pass through. Transparent material allows almost all light to pass through. Example: Clear glass is transparent. Translucent material allows some light to pass through. Example: Rice paper is translucent. Opaque material allows no light to pass through. Example: wood, metal, ceramics, clay, nylon are opaque"}],"source_note":null}]},{"name":"Cycles","blurb":"There are repeated patterns of change in nature.","hue":"#3b7dd8","topics":[{"id":"cycles-life-cycles-of-animals","title":"Life Cycles of Animals","primary":"Primary 3","qa":[{"q":"What is a cycle?","a":"A cycle is a pattern that repeats itself continuously."},{"q":"What is a life cycle of a living thing?","a":"Life cycle of a living thing shows the order of the different stages. The young undergo the same life cycle as their parents."},{"q":"Why do living things reproduce?","a":"Living things reproduce so that the living things of the same kind continue to be found on Earth."},{"q":"Do living things look similar at every stage?","a":"Some living things look very similar at different stage while some look very different."},{"q":"What are the different stages of a three-stage life cycle?","a":"Some animals have three-stage life cycles. The stages are egg, young and adult OR egg, nymph and adult."},{"q":"What is the young of a frog called?","a":"The young of a frog is known as a tadpole. It has a tail and breathes through its gills, different from the adult frog which has no tail and breathes through its lungs and skin."},{"q":"Which animals have three-stage life cycle?","a":"Some examples of animals with three-stage life cycles are the cockroach, grasshopper and frog."},{"q":"What is a nymph?","a":"A nymph looks similar to the adult, except it is smaller and does not have wings."},{"q":"What are the different stages of a four-stage life cycle?","a":"Some animals have four-stage life cycles. The stages are egg, larva, pupa and adult."},{"q":"Which animals have four-stage life cycle?","a":"Some examples of animals with four-stage life cycles are the butterfly, mosquito and beetle."},{"q":"What is a wriggler?","a":"A mosquito larva is called a wriggler and lives in water after it hatches from an egg laid in stagnant water."},{"q":"What is moulting?","a":"Moulting is the process when a larva gets too big for its skin, it grows a new one and sheds the old one."}],"source_note":null},{"id":"cycles-life-cycles-of-plants","title":"Life Cycles of Plants","primary":"Primary 3","qa":[{"q":"How many stages in its life cycle does a flowering plant has?","a":"Flowering plant has three stages in their life cycle – seed, young plant and adult plant."},{"q":"Which will grow first, root or shoot, after a seed germinates?","a":"Root grows out of the seed first before the shoot."},{"q":"When will a young plant makes its own food?","a":"A young plant starts making its own food after its leaves develop."},{"q":"What happen when a young plant turns into an adult plant?","a":"More leaves develop to make food and more roots grow to absorb water and minerals from the soil."}],"source_note":null},{"id":"cycles-matter","title":"Matter","primary":"Primary 4","qa":[{"q":"What is matter?","a":"Matter is anything that has mass and occupies space."},{"q":"What is non-matter?","a":"Non-matter is something that does not have mass or volume (occupies space). Examples: Shadows, Light, Heat."},{"q":"What is mass?","a":"Mass is the amount of matter in an object. It tells us how heavy something is. * Note - Mass is not the same as weight. Weight is due to the force of gravity acting on us."},{"q":"What is volume?","a":"The amount of space occupied by an object is its volume."},{"q":"What are the states of matter?","a":"The three states of matter are solid, liquid and gas. Water is one of the few things that can exist in all three states. It can exist in solid state (ice), liquid state (water) and gaseous state (water vapour)."},{"q":"What are the properties of a solid?","a":"A solid has a definite shape and definite volume. A solid cannot be compressed."},{"q":"What are the properties of a liquid?","a":"A liquid has a definite volume but no definite shape. A liquid cannot be compressed."},{"q":"What are the properties of a gas?","a":"A gas has no definite volume and no definite shape. A gas can be compressed."},{"q":"How do we measure mass?","a":"A balance is used to measure mass. Mass is measured in grams (g) or kilograms (kg)."},{"q":"How do we measure volume?","a":"Volume can be measured accurately by a measuring cylinder or syringe. Volume is measured in cubic centimetres (cm³), millilitres (ml) or litres (l)."}],"source_note":null},{"id":"cycles-reproduction-in-humans","title":"Reproduction in Humans","primary":"Primary 5","qa":[{"q":"What does the male reproductive organs of a human consist?","a":"The male reproductive organs of a human consists of the testes and penis."},{"q":"What does the female reproductive organs of a human consist?","a":"The female reproductive organs of a human consists of the ovaries, fallopian tube, womb and vagina."},{"q":"Where are the reproductive cells produced in humans?","a":"a. The testes produce sperm (male reproductive cells) b. The ovaries produce eggs (female reproductive cells)"},{"q":"Where does the fertilised egg develop in humans?","a":"The womb is where the fertilized egg develops."},{"q":"What is fertilisation in humans?","a":"Fertilisation is the fusion of the sperm from the male and egg from the female."},{"q":"What takes place after fertilisation?","a":"The fertilised egg divides to form more cells. Next, it attaches itself to the wall of the female’s womb where it continues to grow and develop."},{"q":"Why is it important for living things to reproduce?","a":"This is to ensure its own kind continues to live / exist on earth."},{"q":"What information does the sperm and egg contain that is passed on?","a":"It contains hereditary information from both parents."}],"source_note":null},{"id":"cycles-reproduction-in-plants","title":"Reproduction in Plants","primary":"Primary 5","qa":[{"q":"What does the male reproductive parts of a flowering plant consist?","a":"The male reproductive parts of a flowering plant consists of the anther and filament."},{"q":"What does the female reproductive parts of a flowering plant consist?","a":"The female reproductive parts of a flowering plant consists of the ovary, ovule, style and stigma."},{"q":"What are the processes of the life cycle of a flowering plant? What processes must take place before fruits and seeds are formed?","a":"They are germination, pollination, fertilization, and seed dispersal."},{"q":"What is germination?","a":"Germination is the process where seeds develop into young plants."},{"q":"What is pollination? What are two ways to allow for pollination? / How are flowers being pollinated?","a":"Pollination is the process where the pollen grains from the anther is transferred to the stigma of a flower. Flowers with large petals are pollinated by insects or birds. Flowers with feathery stigma and anther sticking out of the petals are mostly pollinated by wind."},{"q":"What is fertilisation?","a":"Fertilisation is the fusion of the male reproductive cell with the egg cell."},{"q":"Why is there a need for seed dispersal?","a":"Seed dispersal is the scattering of fruits and seeds further away from the parent plant. Seed dispersal prevents overcrowding and reduces competition for space, nutrients, water and light."},{"q":"What are the conditions needed for germination?","a":"They are water, oxygen and warmth."},{"q":"When do plants need light?","a":"Plants need light only after they develop their first leaves and can make their own food using light energy. (Therefore, light is not needed during germination)."},{"q":"How does a fruit with seeds come about?","a":"After fertilisation, the ovary swells and develops into a fruit while ovules become seeds."},{"q":"How do non-flowering plants reproduce?","a":"Non-flowering plants reproduce by spores."},{"q":"What are the methods of seed dispersal?","a":"Seeds are dispersed by wind, animals, water or explosive action / splitting."},{"q":"What are the common characteristics of wind dispersed seeds?","a":"Wind dispersed seeds have wing-like structures / are light and feathery / have parachute-like structures to stay longer in air."},{"q":"What are the common characteristics of water dispersed seeds?","a":"Water dispersed seeds have fibrous husks that enable them to float on water."},{"q":"What are the common characteristics of animal dispersed seeds?","a":"Seeds have hooks / sticky hairs. Fruit is juicy / fleshy / sweet-tasting"},{"q":"What are the common characteristics of seeds dispersed by explosive action?","a":"Seeds dispersed by explosive action have dry fruits or pods."}],"source_note":null},{"id":"cycles-states-of-water-water-cycle","title":"States of Water & Water Cycle","primary":"Primary 5","qa":[{"q":"What are the 3 states of water?","a":"The 3 states of water are solid (ice, snow, hail), liquid (water, mist, dew, fog) and gaseous (water vapour, steam)."},{"q":"What is the freezing point of water?","a":"The freezing point of water is 0°C."},{"q":"What happens during freezing?","a":"When water (liquid state) loses heat and reaches its freezing point, it freezes and changes from liquid to solid state to form ice."},{"q":"What is the melting point of water?","a":"The melting point of water is 0°C."},{"q":"What happens during melting?","a":"When ice (solid state) gains heat from the surrounding, it melts and changes from solid to liquid state to form water."},{"q":"What is the boiling point of water?","a":"The boiling point of water is 100°C."},{"q":"What happens during boiling?","a":"When water (liquid state) boils at 100°C, it gains heat and changes from liquid to gaseous state to form steam."},{"q":"What is evaporation of water?","a":"Evaporation of water is the change in state of water from liquid to gaseous state before reaching boiling point."},{"q":"What happens during the process of evaporation?","a":"When water (liquid state) gains heat from the surrounding, it changes from liquid to gaseous state to form water vapour."},{"q":"What factors affect the rate of evaporation of water?","a":"Presence of wind, exposed surface area of water and temperature of surroundings (W.E.T) affect the rate of evaporation of water."},{"q":"How is boiling and evaporation of water different?","a":"Boiling only occurs at 100°C but evaporation occurs at any temperature."},{"q":"What is condensation?","a":"Condensation is the change in state from gaseous to liquid state."},{"q":"What happens during the condensation?","a":"When (warm) water vapour touches a cooler surface and loses heat, water vapour condenses to form water droplets."},{"q":"What is the water cycle?","a":"The water cycle is the movement of water from the Earth to the sky and back to the Earth in a continuous way. Water changes its state during the water cycle."},{"q":"Why is the water cycle important?","a":"The water cycle is important as it ensures a continuous supply of fresh water for living things."},{"q":"How is the sun important in the water cycle?","a":"Heat from the sun heats up water in the water bodies so that water can evaporate to form water vapour."},{"q":"How are clouds formed?","a":"Water vapour rises into the sky, loses heat to the cooler air and condenses to form tiny water droplets that gather to form clouds."},{"q":"How is water returned to Earth as freshwater?","a":"When water droplets become big and heavy, they fall from the clouds as rain, snow or hail."}],"source_note":null}]},{"name":"Systems","blurb":"A system is a whole made of parts that work together.","hue":"#c0612e","topics":[{"id":"systems-plant-system","title":"Plant System","primary":"Primary 3","qa":[{"q":"What is a system?","a":"System is made up of 2 or more parts that work together to perform a function."},{"q":"Is plant a system? Explain why a plant is or is not a system.","a":"Plant is a system. Plant is a system as plant is made of 2 or more parts to stay alive."},{"q":"What are the parts of a plant?","a":"Leaf, Stem, Roots (see plant diagram)"},{"q":"What is the function of the leaves?","a":"The leaves trap light to make food."},{"q":"What is the function of the roots?","a":"take in water and mineral salts. and hold the plant firmly to the ground."},{"q":"What is the function of the stem?","a":"supports the plant to stand up right. transport water from the roots to the rest of the plant transport food from the leaves to the rest of the plant"}],"source_note":null},{"id":"systems-the-human-body-as-a-system","title":"The Human Body as a System","primary":"Primary 3","qa":[{"q":"What is a system?","a":"System is made up of 2 or more parts that work together to perform a function."},{"q":"What are the main systems of the human body?","a":"Digestive system Respiratory system Circulatory system Skeletal system Muscular system"},{"q":"What is the function of the digestive system?","a":"The digestive system breaks down food into simple substances and absorb into the body."},{"q":"What are the parts of the digestive system?","a":"Mouth Gullet Stomach Small intestine Large intestine Anus"},{"q":"What is the function of the respiratory system?","a":"The respiratory system takes in and removes air from the body."},{"q":"What are the parts of the respiratory system?","a":"Nose Windpipe Lungs"},{"q":"What is function of the circulatory system?","a":"The circulatory system carries digested food, water and oxygen in the blood to all body parts."},{"q":"What are the parts of the circulatory system?","a":"Heart Blood vessels Blood"},{"q":"What is function of the skeletal system?","a":"The skeletal system support the body, gives its shape and protects some organs."},{"q":"What are parts of the skeletal system?","a":"Skull Backbone rib"},{"q":"What is function of the muscular system?","a":"The muscular system helps the body to move."},{"q":"What are parts of the muscular system?","a":"muscles"}],"source_note":null},{"id":"systems-plants-and-their-parts","title":"Plants and their Parts","primary":"Primary 3","qa":[{"q":"Why is the plant considered a system?","a":"A plant is a system because it has many parts (such as leaves, stems and roots) that work together to carry out functions (for the plant to survive)."},{"q":"What are the main parts of a plant?","a":"Leaves, stems and roots"},{"q":"What are the functions of leaves?","a":"Leaves trap light energy from the Sun to make food and take in and give out gases."},{"q":"What are the functions of stems?","a":"Stem hold/ Support the plant upright and transport food, water and mineral salts to all parts of the plant"},{"q":"What are the functions of roots?","a":"Roots hold the plant firmly to the soil and absorb water and mineral salts for the plant"}],"source_note":null},{"id":"systems-the-human-body-as-a-system-the-digestive-system","title":"The Human Body as a System — The Digestive System","primary":"Primary 3","qa":[{"q":"What is a system?","a":"A system is made up of many parts that work together to carry out a function or functions. When one part is missing or not working properly, the system cannot carry out its function well."},{"q":"What is the function of the human organ systems?","a":"The organ systems work together to enable the human body to eat, grow, breathe and move. They work together to keep us alive."},{"q":"What is the function of the digestive system?","a":"Digestive system Breaks down food into simpler substances Absorbs these substances so that they can be used by the body"},{"q":"What is the function of the circulatory system?","a":"Circulatory system Carries digested food, water and oxygen in the blood to all parts of the body Carries waste materials away from different parts of the body"},{"q":"What is the function of the respiratory system?","a":"Respiratory system Takes air into the body Removes air from the body"},{"q":"What is the function of the skeletal system?","a":"Skeletal system Supports the body Gives the body shape Protects the organs in the body"},{"q":"What is the function of the muscular system?","a":"Muscular system Helps different parts of the body to move"},{"q":"How does the skeletal and muscular system work together?","a":"The skeletal and muscular systems work together to help our bodies move. The respiratory system takes in air into the body which is transported to the rest of the body by the circulatory system."},{"q":"How does the digestive and circulatory system work together?","a":"The food that we eat is digested by the digestive system. The digested food is then sent to different parts of our body by the circulatory system."},{"q":"What is the digestive system made out of?","a":"Mouth, gullet, stomach, small intestine, large intestine and anus."},{"q":"What is the function of the mouth in the digestive system?","a":"Mouth Digestion starts in the mouth. The food in your mouth is chewed into smaller pieces by the teeth. Saliva softens the food so you can swallow it. Saliva contains digestive juice which helps in the digestion process."},{"q":"What is the function of the gullet?","a":"Gullet The partially digested food moves down a tube, called the gullet, into your stomach. No digestion takes place here"},{"q":"What is the function of the stomach?","a":"Stomach Digestion continues here Food is digested further and mixed with other digestive juices."},{"q":"What is the function of the small intestine?","a":"Small intestine More digestive juices are combined with the food. Digestion of food is completed here. Digested food gets absorbed into the walls of the small intestine into the blood. The blood then carries the digested food to different parts of your body."},{"q":"What is the function of the large intestine?","a":"Large intestine Water is removed from the undigested food here."}],"source_note":null},{"id":"systems-unit-of-life-cell-system","title":"Unit of Life (Cell system)","primary":"Primary 5","qa":[{"q":"What is the smallest unit of life?","a":"The smallest unit of life is a cell."},{"q":"What makes up an animal cell?","a":"An animal cell has a nucleus, cytoplasm and cell membrane."},{"q":"What makes up a plant cell?","a":"A plant cell has a nucleus, cytoplasm, cell membrane and cell wall. Some plant parts have cells that contain chloroplasts. Chloroplasts contain chlorophyll which plants use to make food."},{"q":"What is the cytoplasm?","a":"The cytoplasm is a jelly-like substance where cell activities take place."},{"q":"What is the cell membrane?","a":"The cell membrane is a thin membrane that surrounds the cytoplasm. It controls the movement of substances in and out of the cell."},{"q":"What is the nucleus?","a":"The nucleus is found in the cytoplasm. The nucleus controls all the activities in a cell. It also contains information passed on from parents to their young."},{"q":"How are plant cells different from animal cells?","a":"Plants cells have cell wall found outside the cell membrane. It supports and gives the plant cells its shape. Some plant cells have chloroplasts."}],"source_note":null},{"id":"systems-air-and-the-respiratory-system","title":"Air and the Respiratory System","primary":"Primary 5","qa":[{"q":"What gases make up the air?","a":"The air is made up of a mixture of gases. They are nitrogen, oxygen, carbon dioxide, water vapour and other gases."},{"q":"What makes up the human respiratory system?","a":"The human respiratory system is made up of the nose, mouth, windpipe and lungs."},{"q":"What happens when we breathe in?","a":"When we breathe in, air is inhaled. The air enters our body through the nose. The hairs in the nostrils remove dust from the air we breathe in. The air then moves down the windpipe into the air tubes in the lungs where there is an exchange of gases. The diaphragm contracts and moves downwards."},{"q":"What is the function of lungs?","a":"The lungs help the body to take in oxygen and remove carbon dioxide for gaseous exchange. When the air we breathe in reaches the lungs, oxygen passes into the blood. Blood transports carbon dioxide to the lungs for carbon dioxide to be removed from the body when we breathe out."},{"q":"What happens when we breathe out?","a":"When we breathe out, air is exhaled. The diaphragm relaxes and moves upwards. Air leaves the body through the nose."},{"q":"What is breathing rate?","a":"The number of times we breathe in one minute is our breathing rate."},{"q":"How do fish breathe in water?","a":"Fish take in dissolved oxygen that is in the water. The gills have a rich supply of blood vessels that absorb the oxygen in the water. Carbon dioxide is carried away as water flows out of the gills."}],"source_note":null},{"id":"systems-human-circulatory-system","title":"Human Circulatory System","primary":"Primary 5","qa":[{"q":"What makes up the human circulatory system?","a":"The human circulatory system is made up of the heart, blood and blood vessels."},{"q":"What is the function of the blood vessels?","a":"Blood vessels are tubes that transport blood to all parts of the body."},{"q":"What does blood transport?","a":"Blood transports oxygen, digested food and water to all parts of our body. It also transports carbon dioxide and other waste materials away from various parts of our body to be removed."},{"q":"What is the function of the heart?","a":"The heart pumps blood rich in oxygen to the cells in the body. It also transports water and digested food to all parts of the body."},{"q":"Why does the heart rate of a person exercising increase?","a":"The heart will pump blood containing more oxygen and digested food to all parts of the body quicker to produce more energy for the body (cells). More carbon dioxide needs to be removed from the body."}],"source_note":null},{"id":"systems-plant-transport-system","title":"Plant Transport System","primary":"Primary 5","qa":[{"q":"What is the plant transport system made up of?","a":"The plants transport system is made up of water-carrying and food-carrying tubes."},{"q":"What is the function of water-carrying tubes?","a":"The water-carrying tubes transport water and mineral salts from the roots to all parts of the plant."},{"q":"What is the function of food-carrying tubes?","a":"The food-carrying tubes transport food made in the leaves to all parts of the plant."}],"source_note":null},{"id":"systems-plant-respiratory-system","title":"Plant Respiratory System","primary":"Primary 5","qa":[{"q":"How do plants carry out gaseous exchange?","a":"Plants exchange gases with the surroundings through tiny openings on the underside of leaves called stomata."}],"source_note":null},{"id":"systems-electrical-system-and-using-electricity","title":"Electrical System and Using Electricity","primary":"Primary 5","qa":[{"q":"What makes up an electric circuit?","a":"An electric circuit consists of a power source (batteries) and other circuit components such as wires, switch and bulb."},{"q":"What are the parts of a light bulb?","a":"The parts of a light bulb consist of the metal tip, filament, glass bulb and metal casing."},{"q":"What happens when the electric circuit is closed?","a":"When the electric circuit is closed, electricity flows through the circuit and the electrical component such as the bulb lights up."},{"q":"What happens when the electric circuit is opened?","a":"When the electric circuit is opened, there is a gap in the circuit. Thus, electricity cannot flow through the circuit and the electrical component such as the bulb will not light up."},{"q":"What affects the brightness of a bulb in an electric circuit?","a":"The number of batteries in series The number of bulbs in series The number of bulbs in parallel Arrangement of bulbs"},{"q":"What are electrical conductors?","a":"Electrical conductors are materials that allow electric current to flow through easily in an electric circuit. Examples are metals. Some non-metals such as graphite and water(not pure) can also conduct electricity."},{"q":"What are electrical insulators?","a":"Electrical insulators are materials that does not allow electricity to flow through easily in an electric circuit."},{"q":"How does the number of batteries in series affect the brightness of the bulb?","a":"The greater the number of batteries in series, the brighter the bulbs."},{"q":"How does the number of bulbs arranged in series affect the brightness of the bulb?","a":"The greater the number of bulbs arranged in series, the dimmer the bulbs."},{"q":"How does the number of bulbs arranged in parallel affect the brightness of the bulb?","a":"Increasing the number of bulbs arranged in parallel does not affect the brightness of the bulbs. The brightness of the bulbs remain the same and equal to each other."},{"q":"What are the advantages of bulbs arranged in parallel compared to bulbs arranged in series?","a":"The bulbs in parallel are brighter than bulbs in series. When one bulb fuses, the other bulbs continue to light up. The bulbs can be controlled individually by switches. Electricity can be conserved when individual bulbs are switched on only when needed."},{"q":"What are the disadvantages of bulbs arranged in parallel compared to bulbs arranged in series?","a":"The bulbs in parallel consume electricity at a faster rate than bulbs arranged in series as they are brighter."}],"source_note":null}]},{"name":"Energy","blurb":"Energy makes things happen and can change from one form to another.","hue":"#b8902a","topics":[{"id":"energy-light-and-shadows","title":"Light and Shadows","primary":"Primary 4","qa":[{"q":"How are we able to see an object?","a":"We can see an object when it reflects light or when there is a light source."},{"q":"How is a shadow formed?","a":"A shadow is formed when its light is completely or partially blocked by an object."},{"q":"How does light travel?","a":"Light travels in a straight line."},{"q":"What does transparency of an object depend on?","a":"Transparency of an object depends on the amount of light that passes through it. A transparent object allows most light to pass through it. A translucent object allows some light to pass through it. An opaque object does not allow any light to pass through it."},{"q":"What is the relationship between the light source and the object to the shadow formed? How does distance of an object from its light source affect its shadow formed?","a":"When the light source is closer to the object, the shadow becomes bigger. When the light source is further from the object, the shadow becomes smaller."},{"q":"What is the relationship between the screen and the object to the shadow formed? How does distance of an object from the screen affect its shadow formed?","a":"When the screen is moved closer to the object, the shadow becomes smaller. When the screen is moved further from the object, the shadow becomes bigger."}],"source_note":null},{"id":"energy-heat-temperature","title":"Heat & Temperature","primary":"Primary 4","qa":[{"q":"What is heat?","a":"Heat is a form of energy."},{"q":"What is temperature?","a":"Temperature is a measure of how hot something is. It is measured in degree Celsius (°C)."},{"q":"Why do things become hot or cold?","a":"Things become hotter or its temperature rises when they gain heat. They become colder or its temperature lowers when they lose heat."},{"q":"What happens to the state of matter during heating or cooling?","a":"Matter can change its state when it gains or loses heat. Matter can change from solid to liquid or liquid to gas when it gains heat. Matter can change from gas to liquid or liquid to solid when it loses heat."},{"q":"What can also happen to matter during heating or cooling, other than a change in state?","a":"Matter can expand when it is heated or contract when it is cooled, without a change in state."},{"q":"Is there a change in mass when matter expands or contracts?","a":"No, there is no change in mass when matter expands or contracts."},{"q":"What are good conductors of heat?","a":"Good conductors of heat are materials which allow heat to flow through more easily than others. Examples of good conductors of heat are metals."},{"q":"What are poor conductors of heat?","a":"Poor conductors of heat are materials which do not allow heat to flow through them more easily than others. Examples of poor conductors of heat are wood, plastics, rubber and air."}],"source_note":null},{"id":"energy-sources-of-energy","title":"Sources of Energy","primary":"Primary 6","qa":[{"q":"What is our main source of energy?","a":"The Sun is our main source of energy."},{"q":"Which type of energy does the sun give out?","a":"Light and heat energy."},{"q":"Which type of energy is used during photosynthesis?","a":"Only light energy is needed during photosynthesis."},{"q":"How do plants trap light energy?","a":"Light energy is trapped by plants using chlorophyll."},{"q":"What is photosynthesis?","a":"Photosynthesis is the process when plants make food in the presence of sunlight."},{"q":"What happens during photosynthesis?","a":"During photosynthesis, energy from sunlight is used to combine carbon dioxide and water to make glucose and oxygen."},{"q":"What is glucose?","a":"Glucose, a form of sugar, is food for the plant."},{"q":"What happens to excess glucose/sugar?","a":"Excess glucose/sugar is converted to starch and stored in different parts of the plants."},{"q":"What are renewable sources of energy?","a":"Renewable sources of energy are sources of energy that will not run out."},{"q":"What are examples of renewable sources of energy?","a":"The sun, running water and wind are examples of renewable sources of energy."},{"q":"What are examples of non-renewable sources of energy?","a":"Fuels such as coal, oil and natural gas are non-renewable source of energy."},{"q":"What can we do to prevent non-renewable sources of energy such as fuels from running out too fast?","a":"We must learn to use energy wisely or use alternative sources of energy."}],"source_note":null},{"id":"energy-energy-forms-uses","title":"Energy Forms & Uses","primary":"Primary 6","qa":[{"q":"What is energy?","a":"Energy is the ability to do work."},{"q":"What are the different forms of energy?","a":"Sound energy Heat energy Light energy Electrical energy Kinetic energy Potential energy: Chemical potential energy; Gravitational potential energy; Elastic potential energy"},{"q":"What is the primary source of energy?","a":"The Sun is our primary source of energy because many sources of energy come directly or indirectly from the Sun."},{"q":"What is sound energy?","a":"Sound energy is a form of energy that we can hear. Sound energy is produced when things vibrate."},{"q":"What is light energy?","a":"Light energy is a form of energy that enables us to see. Light can travel through a vacuum. The speed of light is about 300,000 kilometres per second."},{"q":"What is heat energy?","a":"Heat or thermal energy is a form of energy that makes things warm or hot."},{"q":"What is electrical energy?","a":"Electrical energy is the movement of electrical charges. Electrical energy, also known as electricity, is usually generated in power stations. Energy stored in batteries and solar cells can also be changed to electricity. We use electricity in many electrical appliances, such as computers, televisions and microwave ovens."},{"q":"What is kinetic energy?","a":"Kinetic energy is a form of energy found in living and non-living things that move."},{"q":"What is potential energy?","a":"Potential energy is a form of energy that is stored in an object. It is also known as stored energy."},{"q":"What is chemical potential energy?","a":"Chemical potential energy is stored in food, fuels and batteries."},{"q":"What is gravitational potential energy?","a":"When an object is placed above the grounds, it stores gravitational potential energy."},{"q":"What is elastic potential energy?","a":"When we stretch a rubber band, wind up a toy or compress a spring, elastic potential energy is stored in these objects."},{"q":"What is the law of conservation of energy?","a":"The law of conservation of energy states that energy can be converted from one form to another but it cannot be created or destroyed."}],"source_note":null}]},{"name":"Interactions","blurb":"Living and non-living things interact in many ways.","hue":"#8a52b5","topics":[{"id":"interactions-magnets","title":"Magnets","primary":"Primary 4","qa":[{"q":"What are magnets?","a":"Magnets attract or pull objects which are magnetic metals such as iron and steel. They come in different shapes and sizes."},{"q":"What are the characteristics of a magnet?","a":"A magnet attracts magnetic metals. has two poles – North and South poles where the attraction is the strongest. points in the North-South direction when it is freely suspended. can attract and repel another magnet. When N-poles or S-poles of two magnets are brought near each other, they repel. Like poles repel each other. When N-pole of a magnet brought to an S-pole of another magnet, both of them attract each other. Unlike poles attract each other."},{"q":"How can we test the strength of a magnet?","a":"By testing how many magnetic thumbtacks each magnet can attract. The one that can attract more thumbtacks is the stronger magnet."},{"q":"How can we make magnets?","a":"We can make magnets using the stroke or the electrical method."},{"q":"How do we carry out the stroke method?","a":"Items needed: Magnet; Magnetic object – iron rod; Steel clips. Instructions: Stroke the iron rod with one pole of the magnet. Repeat the stroking process a few times using the same pole and in the same direction. Bring the iron rod near some steel clips, if it attracts them, it has been magnetised. The greater the number of strokes, the stronger the magnet."},{"q":"How do we carry out the electrical method?","a":"Items needed: An electrical wire; Magnetic object – iron nail; One or more batteries; Steel clips. Instructions: Coil the electrical wire as many times as possible around the nail. Connect the ends of the wires to the ends of the battery. Bring the iron nail near some steel clips, if it attracts them, it has been magnetised. A magnet made this way is called electromagnet. → It is a temporary magnet as once the nail is separated from the wire, it is no longer a magnet. The magnet can be made stronger by increasing the number of turns of wire around the nail and increasing the number of batteries used."},{"q":"How are magnets useful to us?","a":"hold objects in place such as fridge magnets or doorstops. lift objects in scrapyards show directions in a compass cause Maglev trains to ‘float’ and move"}],"source_note":null},{"id":"interactions-forces","title":"Forces","primary":"Primary 6","qa":[{"q":"What is a force?","a":"A force is any push or pull on an object."},{"q":"What is the unit of measurement for forces?","a":"We measure force in newtons (N)."},{"q":"What are the effects of a force?","a":"We cannot see a force. However, we can see the effects of a force. The four main effects of forces are: to move a stationary object, to change the speed of a moving object to become faster, slower or to come to a stop, to change the direction of a moving object, and to change the shape of an object."},{"q":"What are the different types of forces?","a":"Forces can be classified into two types: Contact forces – These forces act only when two objects are in contact with each other. Examples are frictional force and elastic spring force. Non-contact forces – These forces can act on objects from a distance. Examples are gravitational force and magnetic force."},{"q":"What is frictional force?","a":"Frictional force is the force that opposes motion when two surfaces are in contact."},{"q":"How can we reduce frictional force?","a":"We can reduce frictional force in the following ways: Apply a lubricant such as oil or grease on the moving parts Install roller or wheels"},{"q":"What is elastic spring force?","a":"Elastic spring force is exerted by a spring when the spring is stretched or compressed."},{"q":"What is gravitational force?","a":"Gravitational force is the force of attraction between objects. This force can act on an object from a distance. The gravitational force between the Earth and objects on earth is referred to as the object’s weight. *Weight and mass are different. Weight is the force of gravity acting on an object while mass is the amount of matter in an object."},{"q":"What is magnetic force?","a":"Magnetic force is the force exerted by magnets. Magnetic force can be the force of attraction between 2 unlike poles of magnets or between a magnet and a magnetic object. Magnetic force of repulsion occurs between 2 like poles of magnets. It is another type of force that can act on objects from a distance."}],"source_note":null}]}]}/*__DATA__*/;
+  var LS_KEY = "pa_scirev_state";
+
+  var root = document.getElementById("pa-scirev");
+  if(!root) return;
+  var tabsEl = root.querySelector("#pa-sr-tabs");
+  var secEl  = root.querySelector("#pa-sr-sections");
+  var mmBody = root.querySelector("#pa-sr-mmbody");
+
+  /* ---- restore persisted state (best-effort) ---- */
+  var state = {tab:0, open:{}};
+  try{ var s = JSON.parse(localStorage.getItem(LS_KEY)||"{}"); if(s&&typeof s==="object"){state.tab=s.tab||0; state.open=s.open||{};} }catch(e){}
+  function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+
+  function esc(t){ return (t==null?"":String(t)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  /* Answers in the source mash several points into one cell with no
+     separators. We improve READABILITY only — inserting line breaks at clear
+     sentence boundaries — and never change wording. Text is otherwise verbatim. */
+  function renderAnswer(a){
+    var t = String(a==null?"":a).trim();
+    // split after sentence-ending punctuation followed by a space + capital,
+    // and after a lowercase word followed by a Capitalised new clause start.
+    var parts = t.split(/(?<=[.!?])\s+(?=[A-Z(])/);
+    if(parts.length<=1) return esc(t);
+    return "<ul>"+parts.map(function(p){ return "<li>"+esc(p.trim())+"</li>"; }).join("")+"</ul>";
+  }
+
+  /* ---------- build stats ---------- */
+  var nTopics=0, nQ=0;
+  DATA.themes.forEach(function(th){ nTopics+=th.topics.length; th.topics.forEach(function(tp){ nQ+=tp.qa.length; }); });
+  root.querySelector("#pa-sr-stat-themes").textContent = DATA.themes.length;
+  root.querySelector("#pa-sr-stat-topics").textContent = nTopics;
+  root.querySelector("#pa-sr-stat-q").textContent = nQ;
+
+  /* ---------- mind map (SVG tree) ---------- */
+  function buildMindmap(){
+    var TH = DATA.themes;
+    // layout constants
+    var padX=14, spineX=78, themeX=150, leafX=330;
+    var rowH=24, themeGap=14, leafW=360, themeW=140;
+    // compute heights: each theme block height depends on its leaf count when expanded.
+    // We render leaves but hide via CSS class; height accounts for collapsed by default,
+    // so we lay them out fully and let the SVG height be the expanded height.
+    var y=20, themePos=[];
+    TH.forEach(function(th){
+      var leaves=th.topics.length;
+      var blockH=Math.max(rowH, leaves*rowH);
+      themePos.push({y:y, h:blockH, mid:y+blockH/2});
+      y += blockH + themeGap;
+    });
+    var totalH = y+10;
+    var rootMid = totalH/2;
+    var W=leafX+leafW+padX;
+
+    function nodeRect(x,my,w,label,cls,fill,stroke,txtcol,attrs){
+      var h=20, ry=my-h/2;
+      var a = attrs||"";
+      var isLeaf = cls.indexOf("tleaf")>=0;
+      var avail = w-20;
+      // approx width: leaf 11.5px ~6.2px/char, theme/root 13px ~7px/char
+      var per = isLeaf ? 6.2 : 7.0;
+      var est = label.length*per;
+      var tl = (isLeaf && est>avail) ? ' textLength="'+avail+'" lengthAdjust="spacingAndGlyphs"' : '';
+      return '<g class="'+cls+'" '+a+'>'+
+        '<rect x="'+x+'" y="'+ry+'" rx="6" width="'+w+'" height="'+h+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1"/>'+
+        '<text x="'+(x+10)+'" y="'+(my+4)+'" fill="'+txtcol+'"'+tl+'>'+esc(label)+'</text>'+
+        '</g>';
+    }
+    function edge(x1,y1,x2,y2){
+      var mx=(x1+x2)/2;
+      return '<path class="tedge" d="M'+x1+' '+y1+' C '+mx+' '+y1+', '+mx+' '+y2+', '+x2+' '+y2+'"/>';
+    }
+
+    var svg='<svg class="tree" viewBox="0 0 '+W+' '+totalH+'" preserveAspectRatio="xMinYMin meet" role="img" aria-label="Science concept map">';
+    // root node
+    var rootW=70;
+    svg+=nodeRect(padX, rootMid, rootW, "Science", "tnode troot", "#33414f", "#33414f", "#ffffff");
+
+    TH.forEach(function(th,i){
+      var tp=themePos[i];
+      var hue=th.hue;
+      // edge root -> theme
+      svg+=edge(padX+rootW, rootMid, themeX, tp.mid);
+      // theme node (clickable to toggle its branch)
+      var tfill=hue, tstroke=hue;
+      svg+=nodeRect(themeX, tp.mid, themeW, th.name, "tnode ttheme", tfill, tstroke, "#ffffff",
+                    'data-theme-toggle="'+i+'" role="button" tabindex="0" aria-label="Toggle '+esc(th.name)+' branch"');
+      // branch group (leaves), hidden by default
+      svg+='<g class="branch" data-branch="'+i+'">';
+      th.topics.forEach(function(tpc,j){
+        var ly = tp.y + j*rowH + rowH/2;
+        svg+=edge(themeX+themeW, tp.mid, leafX, ly);
+        svg+=nodeRect(leafX, ly, leafW, tpc.title, "tnode tleaf", "#ffffff", "#d8d2c6", "#384150",
+                      'data-goto="'+tpc.id+'" data-theme-idx="'+i+'" role="button" tabindex="0" aria-label="Open '+esc(tpc.title)+'"');
+      });
+      svg+='</g>';
+    });
+    svg+='</svg>';
+    mmBody.innerHTML=svg;
+  }
+
+  /* ---------- tabs + sections ---------- */
+  function buildTabs(){
+    DATA.themes.forEach(function(th,i){
+      var b=document.createElement("button");
+      b.className="tab"; b.type="button"; b.setAttribute("role","tab");
+      b.textContent=th.name;
+      b.setAttribute("aria-selected", i===state.tab ? "true":"false");
+      if(i===state.tab) b.style.background=th.hue;
+      b.addEventListener("click", function(){ selectTab(i); });
+      tabsEl.appendChild(b);
+    });
+  }
+
+  function buildSections(){
+    DATA.themes.forEach(function(th,i){
+      var sec=document.createElement("section");
+      sec.className="theme"+(i===state.tab?" active":"");
+      sec.setAttribute("data-theme-idx", i);
+
+      var intro=document.createElement("div");
+      intro.className="theme-intro";
+      intro.style.borderLeft="3px solid "+th.hue;
+      intro.innerHTML='<span class="dot" style="background:'+th.hue+'"></span>'+
+        '<div><h3>'+esc(th.name)+'</h3><p>'+esc(th.blurb)+'</p></div>';
+      sec.appendChild(intro);
+
+      var ctl=document.createElement("div");
+      ctl.className="tctl";
+      ctl.innerHTML='<button type="button" data-expand="'+i+'">Expand all</button>'+
+                    '<button type="button" data-collapse="'+i+'">Collapse all</button>';
+      sec.appendChild(ctl);
+
+      th.topics.forEach(function(tpc){
+        sec.appendChild(buildTopic(tpc, th.hue));
+      });
+      secEl.appendChild(sec);
+    });
+  }
+
+  function buildTopic(tpc, hue){
+    var card=document.createElement("div");
+    card.className="topic"; card.id="pa-sr-"+tpc.id;
+    if(state.open[tpc.id]) card.classList.add("open");
+
+    var hd=document.createElement("div");
+    hd.className="topic-hd";
+    var badge = tpc.primary ? '<span class="badge">'+esc(tpc.primary.replace("Primary","P"))+'</span>' : '';
+    hd.innerHTML='<svg class="chev" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l5 4-5 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '<span class="ttl">'+esc(tpc.title)+'</span>'+badge+
+      '<span class="qcount">'+tpc.qa.length+' Q</span>';
+    hd.addEventListener("click", function(){
+      var wasOpen = card.classList.contains("open");
+      // exclusive accordion: close sibling topics within the same theme section
+      var section = card.closest(".theme");
+      if(section){
+        section.querySelectorAll(".topic.open").forEach(function(other){
+          if(other!==card){
+            other.classList.remove("open");
+            if(other.id && other.id.indexOf("pa-sr-")===0){
+              state.open[other.id.slice(6)] = false;
+            }
+          }
+        });
+      }
+      card.classList.toggle("open", !wasOpen);
+      state.open[tpc.id]=!wasOpen; save();
+    });
+    card.appendChild(hd);
+
+    var body=document.createElement("div");
+    body.className="topic-body";
+
+    if(tpc.source_note){
+      var sn=document.createElement("div");
+      sn.className="srcnote";
+      sn.innerHTML='<svg class="ic" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l6.5 11.5H1.5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v3.2M8 11.2v.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'+
+        '<div><b>Source note.</b> '+esc(tpc.source_note)+'</div>';
+      body.appendChild(sn);
+    }
+
+    tpc.qa.forEach(function(qa, idx){
+      var row=document.createElement("div");
+      row.className="qa";
+      var head=document.createElement("div");
+      head.className="qrow";
+      head.innerHTML='<span class="qmark">Q'+(idx+1)+'</span>'+
+        '<span class="qtext">'+esc(qa.q)+'</span>'+
+        '<svg class="qtog" width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l5 4-5 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var ans=document.createElement("div");
+      ans.className="arow";
+      ans.innerHTML=renderAnswer(qa.a);
+      head.addEventListener("click", function(){
+        var wasOpen = row.classList.contains("open");
+        // exclusive: close any other open answer within this topic body
+        body.querySelectorAll(".qa.open").forEach(function(other){
+          if(other!==row) other.classList.remove("open");
+        });
+        row.classList.toggle("open", !wasOpen);
+      });
+      row.appendChild(head); row.appendChild(ans);
+      body.appendChild(row);
+    });
+
+    card.appendChild(body);
+    return card;
+  }
+
+  /* ---------- interactions ---------- */
+  function selectTab(i){
+    state.tab=i; save();
+    Array.prototype.forEach.call(tabsEl.children, function(b,bi){
+      b.setAttribute("aria-selected", bi===i?"true":"false");
+      b.style.background = bi===i ? DATA.themes[bi].hue : "";
+      b.style.color = bi===i ? "#fff" : "";
+    });
+    Array.prototype.forEach.call(secEl.children, function(s){
+      s.classList.toggle("active", parseInt(s.getAttribute("data-theme-idx"),10)===i);
+    });
+  }
+
+  function setAllTopics(themeIdx, open){
+    var section = secEl.querySelector('.theme[data-theme-idx="'+themeIdx+'"]');
+    if(!section) return;
+    section.querySelectorAll(".topic").forEach(function(card){
+      card.classList.toggle("open", open);
+      if(card.id && card.id.indexOf("pa-sr-")===0) state.open[card.id.slice(6)] = open;
+    });
+    save();
+  }
+
+  function gotoTopic(id, themeIdx){
+    if(typeof themeIdx==="number") selectTab(themeIdx);
+    var card=document.getElementById("pa-sr-"+id);
+    if(!card) return;
+    var section=card.closest(".theme");
+    if(section){
+      section.querySelectorAll(".topic.open").forEach(function(other){
+        if(other!==card){
+          other.classList.remove("open");
+          if(other.id && other.id.indexOf("pa-sr-")===0) state.open[other.id.slice(6)]=false;
+        }
+      });
+    }
+    card.classList.add("open");
+    state.open[id]=true; save();
+    card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+    card.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  // mind map delegation
+  root.addEventListener("click", function(e){
+    var t=e.target.closest("[data-mm-toggle]");
+    if(t){ root.querySelector("#pa-sr-mm").classList.toggle("open"); return; }
+    var th=e.target.closest("[data-theme-toggle]");
+    if(th){ var idx=th.getAttribute("data-theme-toggle");
+      var br=mmBody.querySelector('[data-branch="'+idx+'"]'); if(br) br.classList.toggle("show"); return; }
+    var g=e.target.closest("[data-goto]");
+    if(g){ gotoTopic(g.getAttribute("data-goto"), parseInt(g.getAttribute("data-theme-idx"),10)); return; }
+    var ex=e.target.closest("[data-expand]");
+    if(ex){ setAllTopics(parseInt(ex.getAttribute("data-expand"),10), true); return; }
+    var co=e.target.closest("[data-collapse]");
+    if(co){ setAllTopics(parseInt(co.getAttribute("data-collapse"),10), false); return; }
+  });
+  // keyboard a11y for svg nodes
+  root.addEventListener("keydown", function(e){
+    if(e.key!=="Enter" && e.key!==" ") return;
+    var el=e.target;
+    if(el.hasAttribute && (el.hasAttribute("data-theme-toggle")||el.hasAttribute("data-goto"))){
+      e.preventDefault(); el.dispatchEvent(new MouseEvent("click",{bubbles:true}));
+    }
+  });
+
+  /* ---------- init ---------- */
+  buildMindmap();
+  buildTabs();
+  buildSections();
+
+  // expose a tiny API so Quest PSLE host can drive it if desired
+  window.QuestScienceReviewer = {
+    goto: gotoTopic,
+    selectTheme: selectTab,
+    data: DATA
+  };
+})();
+</script>
+</body>
+</html>
