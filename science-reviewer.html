@@ -20,6 +20,18 @@
 #pa-scirev *,#pa-scirev *::before,#pa-scirev *::after{box-sizing:border-box;}
 #pa-scirev .wrap{max-width:var(--maxw); margin:0 auto; padding:18px 16px 60px;}
 
+/* back-to-app bar */
+#pa-scirev .backbar{position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:8px;
+  margin:-18px -16px 12px; padding:11px 16px; background:var(--card);
+  border-bottom:1px solid var(--line);}
+#pa-scirev .backbar button{display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  border:1px solid var(--line); background:var(--bg); color:var(--accent);
+  font:inherit; font-size:.85rem; font-weight:700; padding:8px 14px; border-radius:999px;
+  transition:background .15s, border-color .15s;}
+#pa-scirev .backbar button:hover{background:#eef4f7; border-color:var(--accent);}
+#pa-scirev .backbar button:active{transform:scale(.97);}
+#pa-scirev .backbar .backbar-ttl{font-size:.8rem; color:var(--soft); font-weight:600;}
+
 /* header */
 #pa-scirev .hd{margin-bottom:6px;}
 #pa-scirev .hd h1{font-size:1.55rem; font-weight:800; letter-spacing:-.02em; margin:0 0 4px;}
@@ -117,6 +129,13 @@
 <!-- ===== INJECT START: this whole block is what getScienceReviewerHTML() returns ===== -->
 <div id="pa-scirev">
   <div class="wrap">
+    <div class="backbar">
+      <button type="button" data-sr-back aria-label="Return to Quest PSLE">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to Quest PSLE
+      </button>
+      <span class="backbar-ttl">🔬 Science Reviewer</span>
+    </div>
     <div class="hd">
       <h1>PSLE Science Reviewer</h1>
       <p>Question &amp; answer revision companion, organised by the five PSLE science themes. Primary 3 to 6.</p>
@@ -406,6 +425,8 @@
 
   // mind map delegation
   root.addEventListener("click", function(e){
+    var bk=e.target.closest("[data-sr-back]");
+    if(bk){ returnToApp(); return; }
     var t=e.target.closest("[data-mm-toggle]");
     if(t){ root.querySelector("#pa-sr-mm").classList.toggle("open"); return; }
     var th=e.target.closest("[data-theme-toggle]");
@@ -426,6 +447,21 @@
       e.preventDefault(); el.dispatchEvent(new MouseEvent("click",{bubbles:true}));
     }
   });
+
+  /* ---------- return to host app ---------- */
+  function returnToApp(){
+    // If a host page opened this in-place via the public API, let it handle closing.
+    try{
+      if(window.QuestPSLE && typeof window.QuestPSLE.closeScienceReviewer==="function"){
+        window.QuestPSLE.closeScienceReviewer(); return;
+      }
+    }catch(_){}
+    // Opened as a new tab/window from the app: closing returns focus to the app tab.
+    if(window.opener && !window.opener.closed){ window.close(); return; }
+    // Otherwise navigate back to the app in this same tab.
+    try{ window.location.href="./index.html"; return; }catch(_){}
+    if(history.length>1){ history.back(); }
+  }
 
   /* ---------- init ---------- */
   buildMindmap();
